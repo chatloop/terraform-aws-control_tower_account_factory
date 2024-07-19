@@ -62,7 +62,7 @@ variable "ct_home_region" {
   description = "The region from which this module will be executed. This MUST be the same region as Control Tower is deployed."
   type        = string
   validation {
-    condition     = can(regex("(us(-gov)?|ap|ca|cn|eu|sa|me|af)-(central|(north|south)?(east|west)?)-\\d", var.ct_home_region))
+    condition     = can(regex("(us(-gov)?|ap|ca|cn|eu|sa|me|af|il)-(central|(north|south)?(east|west)?)-\\d", var.ct_home_region))
     error_message = "Variable var: region is not valid."
   }
 }
@@ -74,6 +74,35 @@ variable "cloudwatch_log_group_retention" {
   validation {
     condition     = contains(["1", "3", "5", "7", "14", "30", "60", "90", "120", "150", "180", "365", "400", "545", "731", "1827", "3653", "0"], var.cloudwatch_log_group_retention)
     error_message = "Valid values for var: cloudwatch_log_group_retention are (1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653, and 0)."
+  }
+}
+
+variable "backup_recovery_point_retention" {
+  description = "Number of days to keep backup recovery points in AFT DynamoDB tables. Default = Never Expire"
+  type        = number
+  default     = null
+  validation {
+    condition     = var.backup_recovery_point_retention == null ? true : (var.backup_recovery_point_retention >= 1 && var.backup_recovery_point_retention <= 36500)
+    error_message = "Value must be between 1 and 36500."
+  }
+}
+variable "log_archive_bucket_object_expiration_days" {
+  description = "Amount of days to keep the objects stored in the AFT logging bucket"
+  type        = number
+  default     = 365
+  validation {
+    condition     = var.log_archive_bucket_object_expiration_days > 0
+    error_message = "Log_archive_bucket_object_expiration_days must be an integer greater than 0."
+  }
+}
+
+variable "aft_backend_bucket_access_logs_object_expiration_days" {
+  description = "Amount of days to keep the objects stored in the access logs bucket for AFT backend buckets"
+  type        = number
+  default     = 365
+  validation {
+    condition     = var.aft_backend_bucket_access_logs_object_expiration_days > 0
+    error_message = "aft_backend_bucket_access_logs_object_expiration_days must be an integer greater than 0."
   }
 }
 
@@ -261,7 +290,7 @@ variable "account_provisioning_customizations_repo_branch" {
 variable "terraform_version" {
   description = "Terraform version being used for AFT"
   type        = string
-  default     = "1.5.7"
+  default     = "1.6.0"
   validation {
     condition     = can(regex("\\bv?\\d+(\\.\\d+)+[\\-\\w]*\\b", var.terraform_version))
     error_message = "Invalid value for var: terraform_version."
@@ -323,6 +352,15 @@ variable "terraform_api_endpoint" {
 #########################################
 # AFT VPC Variables
 #########################################
+variable "aft_enable_vpc" {
+  description = "Flag turning use of VPC on/off for AFT"
+  type        = bool
+  default     = true
+  validation {
+    condition     = contains([true, false], var.aft_enable_vpc)
+    error_message = "Valid values for var: aft_enable_vpc are (true, false)."
+  }
+}
 
 variable "aft_vpc_cidr" {
   type        = string
